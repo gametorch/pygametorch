@@ -52,6 +52,27 @@ path = "src/gametorch/_version.py"
 [tool.hatch.build.targets.wheel]
 packages = ["src/gametorch"]
 
+[tool.hatch.build.targets.sdist]
+# Explicit allow-list so local secrets (env files, PyPI tokens, API keys) can
+# never be swept into a release artifact.
+include = [
+    "/src",
+    "/tests",
+    "/examples",
+    "/README.md",
+    "/RELEASING.md",
+    "/LICENSE",
+    "/pyproject.toml",
+]
+exclude = [
+    "/.temporary_*",
+    "/*.token",
+    "/.env*",
+    "/.gametorch_v2_api_key_for_testing",
+    "/**/__pycache__",
+    "**/*.pyc",
+]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 asyncio_mode = "auto"
