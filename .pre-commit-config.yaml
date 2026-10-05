@@ -1,0 +1,21 @@
+# Install the git hooks with:  uv run pre-commit install
+# Run them across the repo with: uv run pre-commit run --all-files
+
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.16.10
+    hooks:
+      - id: ruff
+        args: [--fix]
+      - id: ruff-format
+
+  - repo: local
+    hooks:
+      - id: twine-check
+        name: twine check (build + validate package metadata)
+        entry: scripts/twine_check.sh
+        language: system
+        pass_filenames: false
+        require_serial: true
+        # Only re-run when something that affects the built metadata changes.
+        files: ^(pyproject\.toml|README\.md|LICENSE|RELEASING\.md|src/gametorch/_version\.py)$

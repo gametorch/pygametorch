@@ -276,6 +276,17 @@ The live tests and the generation examples each create their own project. By
 default they delete it again at the end; set `GAMETORCH_KEEP_PROJECT=1` to keep
 the project so you can inspect it in the GameTorch UI.
 
+## Development
+
+```sh
+uv sync --extra dev
+uv run pre-commit install          # enable the ruff + twine-check hooks
+uv run ruff check . && uv run ruff format --check .
+uv run pytest
+```
+
+Publishing is automated with Trusted Publishing; see [RELEASING.md](RELEASING.md).
+
 ## License
 
 MIT. See [LICENSE](LICENSE).
