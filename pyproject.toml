@@ -3,8 +3,8 @@ requires = ["hatchling>=1.27"]
 build-backend = "hatchling.build"
 
 [project]
-name = "gametorch"
-version = "0.1.0"
+name = "pygametorch"
+dynamic = ["version"]
 description = "Official Python SDK for the GameTorch API: generate game-ready sprites, sound effects and animations."
 readme = "README.md"
 license = "MIT"
@@ -44,6 +44,10 @@ Documentation = "https://gametorch.app/api/docs"
 Repository = "https://github.com/gametorch/pygametorch"
 Issues = "https://github.com/gametorch/pygametorch/issues"
 Changelog = "https://github.com/gametorch/pygametorch/releases"
+
+[tool.hatch.version]
+# Single source of truth for the version. Bump it in src/gametorch/_version.py.
+path = "src/gametorch/_version.py"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/gametorch"]

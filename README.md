@@ -27,10 +27,12 @@ from text prompts and organizes them into projects.
 ## Installation
 
 ```sh
-pip install gametorch
+pip install pygametorch
 # or
-uv add gametorch
+uv add pygametorch
 ```
+
+The distribution is named `pygametorch`; import it as `gametorch`.
 
 Python 3.11+ is required.
 

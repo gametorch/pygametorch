@@ -20,6 +20,9 @@ htmlcov/
 .env.*
 .gametorch_v2_api_key_for_testing
 *.pem
+.temporary_*
+*.token
+.pypirc
 
 # Generated example output
 gametorch-exports/
