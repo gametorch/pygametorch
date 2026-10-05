@@ -1,0 +1,88 @@
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[project]
+name = "gametorch"
+version = "0.1.0"
+description = "Official Python SDK for the GameTorch API: generate game-ready sprites, sound effects and animations."
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+requires-python = ">=3.11"
+authors = [
+    { name = "GameTorch Developer", email = "216087407+gametorch@users.noreply.github.com" },
+]
+keywords = ["gametorch", "gamedev", "sprites", "animations", "api", "sdk"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Games/Entertainment",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Typing :: Typed",
+]
+dependencies = [
+    "httpx>=0.28.1,<1",
+    "pydantic>=2.11,<3",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.3",
+    "pytest-asyncio>=1.0",
+    "ruff>=0.9",
+]
+
+[project.urls]
+Homepage = "https://gametorch.app"
+Documentation = "https://gametorch.app/api/docs"
+Repository = "https://github.com/gametorch/pygametorch"
+Issues = "https://github.com/gametorch/pygametorch/issues"
+Changelog = "https://github.com/gametorch/pygametorch/releases"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/gametorch"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+addopts = "-ra"
+markers = [
+    "live: read-only tests against a live GameTorch deployment",
+    "live_writes: live tests that create and delete their own data",
+    "live_spend: live tests that spend credits",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "UP",  # pyupgrade
+    "B",   # flake8-bugbear
+    "C4",  # flake8-comprehensions
+    "SIM", # flake8-simplify
+    "RUF", # ruff-specific
+]
+ignore = [
+    "E501", # line length is handled by the formatter
+    "RUF012", # mutable class defaults are safe in pydantic models
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["E501"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
