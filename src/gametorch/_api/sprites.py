@@ -183,6 +183,11 @@ class SpritesMixin:
     ) -> SpriteAssetsResponse:
         """Searches a project's sprite assets by name or label.
 
+        Each returned asset's ``id`` is the reference image you pass to
+        :meth:`~gametorch.AsyncClient.generate_animation` /
+        :meth:`~gametorch.AsyncClient.estimate_animation` via
+        ``.base_asset_id(...)`` to animate that sprite.
+
         ``GET /projects/{project_id}/sprite-assets``
         """
         params = [("q", query)] if query is not None else None

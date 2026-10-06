@@ -2,6 +2,9 @@
 saves a sub-range as a named preset with metadata and a label, then exports it
 in every supported format.
 
+This animation is generated from scratch (no reference image). To animate an
+existing sprite instead, see ``examples/animate_sprite.py``.
+
 **This example spends credits** (animation generation and, if needed, frame
 generation). It creates a fresh project and deletes it again at the end. Set
 ``GAMETORCH_KEEP_PROJECT=1`` to keep the project.

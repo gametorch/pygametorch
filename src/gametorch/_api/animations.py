@@ -42,7 +42,14 @@ class AnimationEstimateBuilder:
         return self
 
     def base_asset_id(self, base_asset_id: IdLike) -> AnimationEstimateBuilder:
-        """Bases the estimate on an existing asset."""
+        """Bases the estimate on an existing sprite asset (the reference image).
+
+        Pass the ``id`` of a sprite asset in the same project — typically from
+        :meth:`~gametorch.AsyncClient.list_sprite_assets` or a completed sprite
+        generation's ``assets``. Use the same value you would pass to
+        :meth:`AnimationRunBuilder.base_asset_id` so the estimate prices the run
+        you are about to start.
+        """
         self._base_asset_id = base_asset_id
         return self
 
@@ -98,7 +105,14 @@ class AnimationRunBuilder:
         return self
 
     def base_asset_id(self, base_asset_id: IdLike) -> AnimationRunBuilder:
-        """Animates an existing asset."""
+        """Animates an existing sprite asset (the reference image).
+
+        Pass the ``id`` of a sprite asset in the same project — typically from
+        :meth:`~gametorch.AsyncClient.list_sprite_assets` or a completed sprite
+        generation's ``assets``. Supplying it keeps the animation on-model with
+        that sprite; omit it to generate the animation from scratch. The run
+        echoes the value back as :attr:`~gametorch.AnimationRun.base_asset_id`.
+        """
         self._base_asset_id = base_asset_id
         return self
 
@@ -183,12 +197,33 @@ class AnimationsMixin:
     def estimate_animation(self, project_id: IdLike) -> AnimationEstimateBuilder:
         """Estimates the credit cost of an animation run without starting one.
 
+        Accepts the same ``.base_asset_id(...)`` reference image as
+        :meth:`generate_animation`; pass the same value to keep the estimate and
+        the run consistent.
+
         ``POST /projects/{project_id}/animation-runs/estimate``
         """
         return AnimationEstimateBuilder(self, self._dispatch, project_id)  # type: ignore[attr-defined]
 
     def generate_animation(self, project_id: IdLike) -> AnimationRunBuilder:
-        """Starts building an animation run."""
+        """Starts building an animation run.
+
+        To animate an existing sprite, pass that sprite asset's ``id`` (from
+        ``list_sprite_assets`` or a generation's ``assets``) via
+        ``.base_asset_id(...)``; omit it to generate the animation from scratch.
+        Animating a sprite is what keeps the animation on-model with the sprite.
+
+        Example::
+
+            job = await (
+                client.generate_animation(project.id)
+                .prompt("the hero draws her sword and raises it overhead")
+                .animation_model("ash")
+                .duration(4)
+                .base_asset_id(sprite_asset.id)
+                .send()
+            )
+        """
         return AnimationRunBuilder(self, self._dispatch, project_id)  # type: ignore[attr-defined]
 
     async def list_animation_runs(

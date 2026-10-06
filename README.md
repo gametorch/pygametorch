@@ -172,16 +172,39 @@ async for generation in stream:
     print(generation.id)
 ```
 
-## Filtering animations by base image
+## Animating an existing sprite (reference image)
+
+Animation runs can be generated from scratch or driven by a **reference image**.
+To keep an animation on-model with a sprite you already generated, pass that
+sprite asset's id as `base_asset_id`. The value is the `id` of a sprite asset in
+the same project — get it from `list_sprite_assets`, or from the `assets` of a
+completed sprite generation:
+
+```python
+# The sprite we want the animation to stay on-model with.
+asset = (await client.list_sprite_assets(project.id)).assets[0]
+
+run = (
+    client.generate_animation(project.id)
+    .prompt("the hero draws her sword and raises it overhead")
+    .animation_model("ash")
+    .duration(4)
+    .base_asset_id(asset.id)  # animate this sprite; omit for from-scratch
+    .send()
+)
+```
+
+`estimate_animation` accepts the same `base_asset_id`; pass the same value so
+the estimate prices the run you are about to start.
 
 Animation runs link back to the sprite asset they were generated from via
-`base_asset_id` (``None`` when generated from scratch). You can filter animation
+`base_asset_id` (`None` when generated from scratch). You can filter animation
 queries by it:
 
 ```python
 from gametorch import ListParams
 
-runs = await client.list_animation_runs(project.id, ListParams(base_asset_id=sprite.id))
+runs = await client.list_animation_runs(project.id, ListParams(base_asset_id=asset.id))
 for run in runs.animations:
     print(run.id, run.base_asset_id)
 ```
@@ -243,6 +266,7 @@ python examples/list_projects.py
 python examples/generate_sprite.py       # spends credits
 python examples/generate_sound.py        # spends credits
 python examples/generate_animation.py    # spends credits
+python examples/animate_sprite.py        # spends credits; reference-image flow
 python examples/export_animation.py      # read-only; exports every format
 python examples/create_admin_key.py      # needs an admin key
 python examples/create_project_keys.py   # needs an admin key
