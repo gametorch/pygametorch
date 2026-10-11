@@ -15,6 +15,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict
 
+from ._errors import ConfigError
 from ._models_helpers import DecimalValue
 
 __all__ = [
@@ -29,6 +30,7 @@ __all__ = [
     "OkResponse",
     "Page",
     "Paginator",
+    "PutMetadataRequest",
     "SpendResetCadence",
     "SpriteMode",
     "credits_to_usd",
@@ -112,10 +114,56 @@ class AssetNameResponse(_Base):
 
 
 class AssetMetadataResponse(_Base):
-    """Response returned by metadata endpoints."""
+    """Response returned by the metadata PUT endpoints.
+
+    ``metadata`` is the **full** map after the change, not just the keys sent.
+    """
 
     ok: bool = True
     metadata: dict[str, str] = {}
+
+
+class PutMetadataRequest:
+    """Request body for the metadata PUT endpoints (merge/upsert).
+
+    The API **merges** rather than replaces: keys in ``metadata`` are added or
+    overwritten and keys in ``remove`` are deleted; keys you omit are kept.
+    Nothing is cleared unless its key is listed in ``remove``. ``remove_keys``
+    is accepted as an alias for ``remove``.
+
+    Mirrors the OpenAPI ``PutMetadataRequest`` / ``PutSoundMetadataRequest`` /
+    ``PutSavedAnimationMetadataRequest`` schemas. Values are typed as strings but
+    passed through unvalidated so the API's own ``400``/``422`` responses surface.
+    """
+
+    def __init__(
+        self,
+        *,
+        metadata: dict[str, str] | None = None,
+        remove: list[str] | None = None,
+    ) -> None:
+        self.metadata = metadata
+        self.remove = remove
+
+    @classmethod
+    def build(
+        cls,
+        metadata: dict[str, str] | None = None,
+        remove: list[str] | None = None,
+        remove_keys: list[str] | None = None,
+    ) -> PutMetadataRequest:
+        """Builds a request, resolving the ``remove`` / ``remove_keys`` alias."""
+        if remove is not None and remove_keys is not None:
+            raise ConfigError("pass either 'remove' or 'remove_keys', not both")
+        return cls(metadata=metadata, remove=remove if remove is not None else remove_keys)
+
+    def to_body(self) -> dict[str, Any]:
+        body: dict[str, Any] = {}
+        if self.metadata is not None:
+            body["metadata"] = self.metadata
+        if self.remove is not None:
+            body["remove"] = self.remove
+        return body
 
 
 class JobCreated(_Base):

@@ -265,16 +265,64 @@ async def test_rename_sends_null_name() -> None:
     assert response.name is None
 
 
-async def test_metadata_body() -> None:
+async def test_metadata_merge_body_returns_full_map() -> None:
+    seen: dict[str, Any] = {}
+    merged = {"filepath": "/a/b.png", "variant": "background"}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen["body"] = json.loads(request.content)
+        return httpx.Response(200, json={"ok": True, "metadata": merged})
+
+    async with client_with(handler) as client:
+        response = await client.put_asset_metadata(uuid4(), {"variant": "background"})
+    assert seen["body"] == {"metadata": {"variant": "background"}}
+    assert response.metadata == merged
+
+
+async def test_metadata_remove_body() -> None:
     seen: dict[str, Any] = {}
 
     def handler(request: httpx.Request) -> httpx.Response:
         seen["body"] = json.loads(request.content)
-        return httpx.Response(200, json={"ok": True, "metadata": seen["body"]["metadata"]})
+        return httpx.Response(200, json={"ok": True, "metadata": {"filepath": "/a/b.png"}})
 
     async with client_with(handler) as client:
-        response = await client.put_asset_metadata(uuid4(), {"filepath": "/a/b.png"})
-    assert seen["body"] == {"metadata": {"filepath": "/a/b.png"}}
+        response = await client.put_asset_metadata(uuid4(), remove=["variant", "facing"])
+    assert seen["body"] == {"remove": ["variant", "facing"]}
+    assert response.metadata == {"filepath": "/a/b.png"}
+
+
+async def test_metadata_remove_keys_alias() -> None:
+    seen: dict[str, Any] = {}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen["body"] = json.loads(request.content)
+        return httpx.Response(200, json={"ok": True, "metadata": {}})
+
+    async with client_with(handler) as client:
+        await client.put_sound_asset_metadata(uuid4(), {"gain": "0.8"}, remove_keys=["old"])
+    assert seen["body"] == {"metadata": {"gain": "0.8"}, "remove": ["old"]}
+
+
+async def test_metadata_remove_alias_conflict() -> None:
+    def handler(request: httpx.Request) -> httpx.Response:  # pragma: no cover
+        raise AssertionError("a conflicting request must not be sent")
+
+    async with client_with(handler) as client:
+        with pytest.raises(ConfigError):
+            await client.put_saved_animation_metadata(uuid4(), remove=["a"], remove_keys=["b"])
+
+
+async def test_metadata_empty_call_is_a_noop() -> None:
+    seen: dict[str, Any] = {}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen["body"] = json.loads(request.content)
+        return httpx.Response(200, json={"ok": True, "metadata": {"filepath": "/a/b.png"}})
+
+    async with client_with(handler) as client:
+        response = await client.put_asset_metadata(uuid4())
+    assert seen["body"] == {}
     assert response.metadata == {"filepath": "/a/b.png"}
 
 

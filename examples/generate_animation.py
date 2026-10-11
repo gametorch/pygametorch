@@ -112,8 +112,10 @@ def run(client: Client, project: Project) -> None:
 
     tagged = client.put_saved_animation_metadata(saved.id, {"filepath": FILEPATH})
     print(f"metadata after add: {tagged.metadata}")
-    client.put_saved_animation_metadata(saved.id, {})
-    client.put_saved_animation_metadata(saved.id, {"filepath": FILEPATH})
+    merged = client.put_saved_animation_metadata(saved.id, {"loop": "true"})
+    print(f"metadata after merge: {merged.metadata}")
+    removed = client.put_saved_animation_metadata(saved.id, remove=["loop"])
+    print(f"metadata after remove: {removed.metadata}")
 
     label = client.create_label(project.id, f"anim-{uuid4().hex[:8]}", "#ff9800")
     associated = client.associate_saved_animation_label(saved.id, label.name)

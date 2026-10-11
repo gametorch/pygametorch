@@ -15,6 +15,7 @@ from .._types import (
     ListParams,
     Page,
     Paginator,
+    PutMetadataRequest,
 )
 from ..models import SoundGeneration, SoundGenerationsResponse
 from . import list_query
@@ -159,11 +160,20 @@ class SoundsMixin:
         )
 
     async def put_sound_asset_metadata(
-        self, asset_id: IdLike, metadata: dict[str, str]
+        self,
+        asset_id: IdLike,
+        metadata: dict[str, str] | None = None,
+        *,
+        remove: list[str] | None = None,
+        remove_keys: list[str] | None = None,
     ) -> AssetMetadataResponse:
-        """Replaces a sound asset's metadata.
+        """Merges (upserts) a sound asset's metadata.
 
-        ``PUT /sound-assets/{id}/metadata``
+        The keys in ``metadata`` are added or overwritten; keys you omit are
+        kept. Nothing is removed unless its key is listed in ``remove``
+        (``remove_keys`` is an accepted alias). Returns the full merged map.
+
+        OpenAPI ``PutSoundMetadataRequest``; ``PUT /sound-assets/{id}/metadata``
         """
         return await self._send_json(  # type: ignore[attr-defined]
             AssetMetadataResponse,
@@ -172,7 +182,7 @@ class SoundsMixin:
             rate_class=RateClass.WRITES,
             route="PUT /sound-assets/{id}/metadata",
             concurrency=Concurrency.NONE,
-            json_body={"metadata": metadata},
+            json_body=PutMetadataRequest.build(metadata, remove, remove_keys).to_body(),
         )
 
     async def archive_sound_asset(self, asset_id: IdLike) -> ArchiveResponse:

@@ -100,11 +100,14 @@ async def test_sprite_generation_full_flow(spend_client: AsyncClient) -> None:
     named = await spend_client.rename_asset(asset.id, "Hero Fox")
     assert named.name == "Hero Fox"
 
-    updated = await spend_client.put_asset_metadata(asset.id, {"filepath": SPRITE_FILEPATH})
-    assert updated.metadata.get("filepath") == SPRITE_FILEPATH
-    cleared = await spend_client.put_asset_metadata(asset.id, {})
-    assert cleared.metadata == {}
-    await spend_client.put_asset_metadata(asset.id, {"filepath": SPRITE_FILEPATH})
+    tagged = await spend_client.put_asset_metadata(asset.id, {"filepath": SPRITE_FILEPATH})
+    assert tagged.metadata.get("filepath") == SPRITE_FILEPATH
+    merged = await spend_client.put_asset_metadata(asset.id, {"variant": "background"})
+    assert merged.metadata.get("filepath") == SPRITE_FILEPATH
+    assert merged.metadata.get("variant") == "background"
+    removed = await spend_client.put_asset_metadata(asset.id, remove=["variant"])
+    assert "variant" not in removed.metadata
+    assert removed.metadata.get("filepath") == SPRITE_FILEPATH
 
     label = await spend_client.create_label(project.id, short_name("sprite"))
     associated = await spend_client.associate_asset_label(asset.id, label.name)
@@ -146,11 +149,14 @@ async def test_sound_generation_full_flow(spend_client: AsyncClient) -> None:
     named = await spend_client.rename_sound_asset(asset.id, "Sword Unsheath")
     assert named.name == "Sword Unsheath"
 
-    updated = await spend_client.put_sound_asset_metadata(asset.id, {"filepath": SOUND_FILEPATH})
-    assert updated.metadata.get("filepath") == SOUND_FILEPATH
-    cleared = await spend_client.put_sound_asset_metadata(asset.id, {})
-    assert cleared.metadata == {}
-    await spend_client.put_sound_asset_metadata(asset.id, {"filepath": SOUND_FILEPATH})
+    tagged = await spend_client.put_sound_asset_metadata(asset.id, {"filepath": SOUND_FILEPATH})
+    assert tagged.metadata.get("filepath") == SOUND_FILEPATH
+    merged = await spend_client.put_sound_asset_metadata(asset.id, {"loop": "false"})
+    assert merged.metadata.get("filepath") == SOUND_FILEPATH
+    assert merged.metadata.get("loop") == "false"
+    removed = await spend_client.put_sound_asset_metadata(asset.id, remove=["loop"])
+    assert "loop" not in removed.metadata
+    assert removed.metadata.get("filepath") == SOUND_FILEPATH
 
     label = await spend_client.create_label(project.id, short_name("sound"))
     associated = await spend_client.associate_sound_label(asset.id, label.name)
@@ -214,9 +220,12 @@ async def test_animation_generation_exports_and_saved_animation(
         saved.id, {"filepath": ANIMATION_FILEPATH}
     )
     assert tagged.metadata.get("filepath") == ANIMATION_FILEPATH
-    cleared = await spend_client.put_saved_animation_metadata(saved.id, {})
-    assert cleared.metadata == {}
-    await spend_client.put_saved_animation_metadata(saved.id, {"filepath": ANIMATION_FILEPATH})
+    merged = await spend_client.put_saved_animation_metadata(saved.id, {"loop": "true"})
+    assert merged.metadata.get("filepath") == ANIMATION_FILEPATH
+    assert merged.metadata.get("loop") == "true"
+    removed = await spend_client.put_saved_animation_metadata(saved.id, remove=["loop"])
+    assert "loop" not in removed.metadata
+    assert removed.metadata.get("filepath") == ANIMATION_FILEPATH
 
     label = await spend_client.create_label(project.id, short_name("anim"))
     associated = await spend_client.associate_saved_animation_label(saved.id, label.name)

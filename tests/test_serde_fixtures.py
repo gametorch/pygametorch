@@ -14,6 +14,7 @@ from gametorch import (
     ApiKey,
     ApiKeyScope,
     ArchiveResponse,
+    AssetMetadataResponse,
     ExportPlan,
     Generation,
     JobCreated,
@@ -37,6 +38,20 @@ def test_reservation_uses_boolean_created() -> None:
     reservation = JobCreated.model_validate_json(json)
     assert reservation.created is True
     assert str(reservation.reserved_credits) == "300.000000000000"
+
+
+def test_metadata_response_is_the_full_merged_map() -> None:
+    json = """
+    {
+        "ok": true,
+        "metadata": {"filepath": "/foo/bar/sprites/hero.png", "facing": "left"}
+    }
+    """
+    response = AssetMetadataResponse.model_validate_json(json)
+    assert response.metadata == {
+        "filepath": "/foo/bar/sprites/hero.png",
+        "facing": "left",
+    }
 
 
 def test_sprite_generation_tolerates_int_assets_and_array_suggestions() -> None:

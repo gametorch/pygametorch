@@ -220,6 +220,28 @@ generation = await client.get_generation(generation_id)
 print(generation.provenance.user_id, generation.provenance.source)
 ```
 
+## Asset metadata (merge/upsert)
+
+`put_asset_metadata`, `put_sound_asset_metadata` and
+`put_saved_animation_metadata` all **merge** rather than replace. The keys you
+send are added or overwritten; keys you omit are kept, so a call never clears the
+map. To delete keys, list them in `remove` (`remove_keys` is an accepted alias).
+The response carries the full merged map, not just the keys you sent.
+
+```python
+# Add/overwrite keys — everything else stays put.
+tagged = await client.put_asset_metadata(asset_id, {"filepath": "/sprites/hero.png"})
+merged = await client.put_asset_metadata(asset_id, {"variant": "background"})
+print(merged.metadata)  # {"filepath": "/sprites/hero.png", "variant": "background"}
+
+# Delete specific keys (the only way to remove).
+pruned = await client.put_asset_metadata(asset_id, remove=["variant"])
+print(pruned.metadata)  # {"filepath": "/sprites/hero.png"}
+```
+
+Passing both `remove` and `remove_keys` raises `ConfigError`. Omit both to send a
+no-op that just returns the current map.
+
 ## Error handling
 
 Every fallible operation raises a subclass of `GametorchError`. `ApiError`

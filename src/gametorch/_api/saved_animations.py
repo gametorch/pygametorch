@@ -13,6 +13,7 @@ from .._types import (
     ListParams,
     Page,
     Paginator,
+    PutMetadataRequest,
 )
 from ..models import SavedAnimation, SavedAnimationsResponse
 from . import list_query
@@ -135,10 +136,20 @@ class SavedAnimationsMixin:
         )
 
     async def put_saved_animation_metadata(
-        self, saved_id: IdLike, metadata: dict[str, str]
+        self,
+        saved_id: IdLike,
+        metadata: dict[str, str] | None = None,
+        *,
+        remove: list[str] | None = None,
+        remove_keys: list[str] | None = None,
     ) -> AssetMetadataResponse:
-        """Replaces a saved animation's metadata.
+        """Merges (upserts) a saved animation's metadata.
 
+        The keys in ``metadata`` are added or overwritten; keys you omit are
+        kept. Nothing is removed unless its key is listed in ``remove``
+        (``remove_keys`` is an accepted alias). Returns the full merged map.
+
+        OpenAPI ``PutSavedAnimationMetadataRequest``;
         ``PUT /saved-animations/{id}/metadata``
         """
         return await self._send_json(  # type: ignore[attr-defined]
@@ -148,7 +159,7 @@ class SavedAnimationsMixin:
             rate_class=RateClass.WRITES,
             route="PUT /saved-animations/{id}/metadata",
             concurrency=Concurrency.NONE,
-            json_body={"metadata": metadata},
+            json_body=PutMetadataRequest.build(metadata, remove, remove_keys).to_body(),
         )
 
     async def archive_saved_animation(self, saved_id: IdLike) -> ArchiveResponse:

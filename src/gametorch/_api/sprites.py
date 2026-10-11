@@ -15,6 +15,7 @@ from .._types import (
     ListParams,
     Page,
     Paginator,
+    PutMetadataRequest,
     SpriteMode,
 )
 from ..models import Asset, Generation, GenerationsResponse, SpriteAssetsResponse
@@ -257,11 +258,20 @@ class SpritesMixin:
         )
 
     async def put_asset_metadata(
-        self, asset_id: IdLike, metadata: dict[str, str]
+        self,
+        asset_id: IdLike,
+        metadata: dict[str, str] | None = None,
+        *,
+        remove: list[str] | None = None,
+        remove_keys: list[str] | None = None,
     ) -> AssetMetadataResponse:
-        """Replaces a sprite asset's metadata.
+        """Merges (upserts) a sprite asset's metadata.
 
-        ``PUT /assets/{id}/metadata``
+        The keys in ``metadata`` are added or overwritten; keys you omit are
+        kept. Nothing is removed unless its key is listed in ``remove``
+        (``remove_keys`` is an accepted alias). Returns the full merged map.
+
+        OpenAPI ``PutMetadataRequest``; ``PUT /assets/{id}/metadata``
         """
         return await self._send_json(  # type: ignore[attr-defined]
             AssetMetadataResponse,
@@ -270,7 +280,7 @@ class SpritesMixin:
             rate_class=RateClass.WRITES,
             route="PUT /assets/{id}/metadata",
             concurrency=Concurrency.NONE,
-            json_body={"metadata": metadata},
+            json_body=PutMetadataRequest.build(metadata, remove, remove_keys).to_body(),
         )
 
     async def archive_asset(self, asset_id: IdLike) -> ArchiveResponse:

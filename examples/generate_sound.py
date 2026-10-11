@@ -64,11 +64,12 @@ def run(client: Client, project: Project) -> None:
     named = client.rename_sound_asset(asset.id, "Sword Unsheath")
     print(f"named sound: {named.name}")
 
-    updated = client.put_sound_asset_metadata(asset.id, {"filepath": FILEPATH})
-    print(f"metadata after add: {updated.metadata}")
-    cleared = client.put_sound_asset_metadata(asset.id, {})
-    print(f"metadata after remove: {cleared.metadata}")
-    client.put_sound_asset_metadata(asset.id, {"filepath": FILEPATH})
+    tagged = client.put_sound_asset_metadata(asset.id, {"filepath": FILEPATH})
+    print(f"metadata after add: {tagged.metadata}")
+    merged = client.put_sound_asset_metadata(asset.id, {"loop": "false"})
+    print(f"metadata after merge: {merged.metadata}")
+    removed = client.put_sound_asset_metadata(asset.id, remove=["loop"])
+    print(f"metadata after remove: {removed.metadata}")
 
     label = client.create_label(project.id, f"sound-{uuid4().hex[:8]}", "#2196f3")
     associated = client.associate_sound_label(asset.id, label.name)

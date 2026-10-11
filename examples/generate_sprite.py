@@ -68,11 +68,12 @@ def run(client: Client, project: Project) -> None:
     named = client.rename_asset(asset.id, "Hero Fox")
     print(f"named asset: {named.name}")
 
-    updated = client.put_asset_metadata(asset.id, {"filepath": FILEPATH})
-    print(f"metadata after add: {updated.metadata}")
-    cleared = client.put_asset_metadata(asset.id, {})
-    print(f"metadata after remove: {cleared.metadata}")
-    client.put_asset_metadata(asset.id, {"filepath": FILEPATH})
+    tagged = client.put_asset_metadata(asset.id, {"filepath": FILEPATH})
+    print(f"metadata after add: {tagged.metadata}")
+    merged = client.put_asset_metadata(asset.id, {"variant": "background"})
+    print(f"metadata after merge: {merged.metadata}")
+    removed = client.put_asset_metadata(asset.id, remove=["variant"])
+    print(f"metadata after remove: {removed.metadata}")
 
     label = client.create_label(project.id, f"sprite-{uuid4().hex[:8]}", "#4caf50")
     associated = client.associate_asset_label(asset.id, label.name)
