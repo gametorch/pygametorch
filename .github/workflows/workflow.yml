@@ -9,12 +9,22 @@ name: Publish
 # PyPI:      GitHub environment "pypi"
 #
 # Triggers:
-#   - Publishing a GitHub Release -> PyPI
-#   - Manual run -> choose testpypi or pypi
+#   - Push to main that bumps src/gametorch/_version.py: the version is tagged,
+#     a GitHub Release is created and the package is published to PyPI. Skipped
+#     when the tag already exists, so re-pushes are safe.
+#   - Publishing a GitHub Release -> PyPI (manual fallback).
+#   - Manual run -> choose testpypi or pypi.
+#
+# The version bump itself stays manual (see RELEASING.md); CI only tags and
+# releases once the bumped version lands on main.
 
 on:
   release:
     types: [published]
+  push:
+    branches: [main]
+    paths:
+      - "src/gametorch/_version.py"
   workflow_dispatch:
     inputs:
       index:
@@ -34,8 +44,42 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  detect:
+    name: Resolve version and tag state
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      tag: ${{ steps.version.outputs.tag }}
+      release: ${{ steps.version.outputs.release }}
+    steps:
+      - name: Check out
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Resolve version
+        id: version
+        run: |
+          set -euo pipefail
+          version="$(sed -nE 's/^__version__ = "(.*)"/\1/p' src/gametorch/_version.py)"
+          if [ -z "$version" ]; then
+            echo "could not read __version__ from src/gametorch/_version.py" >&2
+            exit 1
+          fi
+          tag="v${version}"
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
+          echo "tag=${tag}" >> "$GITHUB_OUTPUT"
+          if git rev-parse -q --verify "refs/tags/${tag}" >/dev/null; then
+            echo "release=false" >> "$GITHUB_OUTPUT"
+            echo "tag ${tag} already exists; nothing to release"
+          else
+            echo "release=true" >> "$GITHUB_OUTPUT"
+            echo "tag ${tag} is new; will release ${version}"
+          fi
+
   build:
     name: Build distributions
+    needs: detect
     runs-on: ubuntu-latest
     steps:
       - name: Check out
@@ -87,8 +131,11 @@ jobs:
 
   publish-pypi:
     name: Publish to PyPI
-    needs: build
-    if: github.event_name == 'release' || (github.event_name == 'workflow_dispatch' && github.event.inputs.index == 'pypi')
+    needs: [build, detect]
+    if: >-
+      github.event_name == 'release' ||
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.index == 'pypi') ||
+      (github.event_name == 'push' && needs.detect.outputs.release == 'true')
     runs-on: ubuntu-latest
     environment: pypi
     permissions:
@@ -108,3 +155,28 @@ jobs:
 
       - name: Publish to PyPI
         run: uv publish --trusted-publishing always
+
+  tag-release:
+    name: Tag and create GitHub release
+    # Runs after a successful publish so a tagged version is always on PyPI.
+    needs: [detect, publish-pypi]
+    if: github.event_name == 'push' && needs.detect.outputs.release == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Check out
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Create tag and release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ needs.detect.outputs.tag }}
+        run: |
+          set -euo pipefail
+          gh release create "$TAG" \
+            --target "$GITHUB_SHA" \
+            --title "$TAG" \
+            --generate-notes

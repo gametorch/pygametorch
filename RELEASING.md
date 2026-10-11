@@ -43,7 +43,8 @@ git push origin main
 ## 2. Test on TestPyPI
 
 Run the **Publish** workflow manually (`Actions → Publish → Run workflow`) with
-`index = testpypi`. This builds, validates and uploads to TestPyPI.
+`index = testpypi`. This builds, validates and uploads to TestPyPI. It does not
+tag or create a release.
 
 Verify a real install in a throwaway environment:
 
@@ -57,17 +58,33 @@ uv run --python /tmp/gt-check python -c "import gametorch; print(gametorch.__ver
 
 ## 3. Release to PyPI
 
-Create a GitHub Release with a tag matching the version (for example `v0.1.1`).
-Publishing the release triggers the workflow's `publish-pypi` job, which uploads
-to PyPI via OIDC.
+Pushing the version bump to `main` is all it takes. The Publish workflow runs on
+any push that changes `src/gametorch/_version.py`, and once the bump lands it:
 
-Alternatively, run the workflow manually with `index = pypi`.
+1. builds and validates the distributions,
+2. publishes them to PyPI via OIDC, then
+3. creates the `vX.Y.Z` tag and a GitHub Release with generated notes.
+
+The tag is created **after** a successful publish, so a tagged version is always
+on PyPI, and the job is skipped entirely when the tag already exists — re-pushing
+`main` won't re-release.
+
+Two manual fallbacks remain if you need them:
+
+- Create a GitHub Release with a tag matching the version (for example `v0.1.1`);
+  publishing it triggers the `publish-pypi` job.
+- Run the workflow manually with `index = pypi`.
 
 ## Notes
 
 - **Versions are immutable.** A filename (`pygametorch-0.1.1-*.whl`) can never be
   re-uploaded. To fix a bad release, yank it on PyPI and publish a new patch
   version.
+- **Only CI creates release tags.** Don't push `vX.Y.Z` by hand — the automated
+  flow keys off the tag's absence, and a pre-existing tag makes it skip the
+  release.
+- The `release: published` and manual `workflow_dispatch` paths still exist, but
+  the push-on-bump path is the normal one.
 - The workflow runs `uvx twine check dist/*` before uploading, so a broken
   README/metadata fails fast.
 - To publish locally as a fallback (requires an API token):
